@@ -1,0 +1,24 @@
+# Backend
+/backend/target/
+/backend/.mvn/wrapper/maven-wrapper.jar
+
+# Frontend
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.angular/
+/frontend/.turbo/
+
+# IDE / tooling
+.idea/
+.vscode/
+*.iml
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Logs and coverage
+*.log
+coverage/
+reports/
+

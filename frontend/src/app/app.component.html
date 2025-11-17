@@ -1,0 +1,149 @@
+<div class="page">
+  <header class="page__header">
+    <div>
+      <p class="eyebrow">Studio Grafit</p>
+      <h1>Zapisy na zajęcia fitness</h1>
+      <p class="subtitle">
+        Dodawaj nowe treningi, zapisuj chętnych i zarządzaj listą uczestników.
+        Rezygnacja możliwa najpóźniej na 24 godziny przed zajęciami.
+      </p>
+    </div>
+    <button class="ghost" type="button" (click)="resetForm()" [disabled]="saving">
+      Nowe zajęcia
+    </button>
+  </header>
+
+  <section class="panel form-panel">
+    <h2>{{ editingId ? 'Edytuj zajęcia' : 'Dodaj zajęcia' }}</h2>
+    <form [formGroup]="sessionForm" (ngSubmit)="submitSession()">
+      <div class="form-row">
+        <label for="title">Nazwa*</label>
+        <input
+          id="title"
+          type="text"
+          placeholder="np. Poranna joga"
+          formControlName="title"
+        />
+        <small *ngIf="sessionForm.get('title')?.invalid && sessionForm.get('title')?.touched">
+          Wpisz nazwę zajęć.
+        </small>
+      </div>
+      <div class="form-row">
+        <label for="description">Opis</label>
+        <textarea
+          id="description"
+          rows="3"
+          placeholder="Czego dotyczy trening?"
+          formControlName="description"
+        ></textarea>
+      </div>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="startTime">Data i godzina*</label>
+          <input id="startTime" type="datetime-local" formControlName="startTime" />
+        </div>
+        <div class="form-row">
+          <label for="capacity">Limit miejsc</label>
+          <input
+            id="capacity"
+            type="number"
+            min="1"
+            placeholder="bez limitu"
+            formControlName="capacity"
+          />
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" [disabled]="sessionForm.invalid || saving">
+          {{ editingId ? 'Zapisz zmiany' : 'Dodaj zajęcia' }}
+        </button>
+        <button type="button" class="ghost" (click)="resetForm()" [disabled]="saving">
+          Wyczyść
+        </button>
+      </div>
+    </form>
+  </section>
+
+  <section class="panel sessions-panel">
+    <div class="panel__header">
+      <h2>Plan zajęć</h2>
+      <div class="status">
+        <span *ngIf="loading">Ładowanie...</span>
+        <span *ngIf="!loading">Łącznie: {{ sessions.length }}</span>
+      </div>
+    </div>
+
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+    <div class="sessions-list">
+      <article class="session-card" *ngFor="let session of sessions">
+        <header>
+          <div>
+            <h3>{{ session.title }}</h3>
+            <p class="time">
+              {{ session.startTime | date: 'fullDate' : undefined : 'pl-PL' }}
+              ·
+              {{ session.startTime | date: 'shortTime' : undefined : 'pl-PL' }}
+            </p>
+            <p class="desc" *ngIf="session.description">{{ session.description }}</p>
+          </div>
+          <div class="session-actions">
+            <button type="button" class="ghost" (click)="startEdit(session)" [disabled]="saving">
+              Edytuj
+            </button>
+            <button type="button" class="danger" (click)="deleteSession(session)" [disabled]="saving">
+              Usuń
+            </button>
+          </div>
+        </header>
+
+        <p class="meta">
+          Zapisanych: <strong>{{ session.attendeeCount }}</strong>
+          <span *ngIf="session.capacity !== null">
+            / {{ session.capacity }}
+          </span>
+        </p>
+
+        <div class="booking-form">
+          <input
+            type="text"
+            placeholder="Twoje imię"
+            [(ngModel)]="bookingNames[session.id]"
+            [ngModelOptions]="{ standalone: true }"
+            [name]="'booking-' + session.id"
+            [disabled]="saving || sessionFull(session)"
+          />
+          <button
+            type="button"
+            (click)="addBooking(session)"
+            [disabled]="saving || sessionFull(session)"
+          >
+            Dołącz
+          </button>
+        </div>
+        <small class="hint" *ngIf="sessionFull(session)">Brak wolnych miejsc.</small>
+
+        <ul class="bookings" *ngIf="session.bookings.length; else emptyList">
+          <li *ngFor="let booking of session.bookings">
+            <span>{{ booking.attendeeName }}</span>
+            <button
+              type="button"
+              class="ghost"
+              (click)="cancelBooking(session, booking)"
+              [disabled]="saving || sessionLocked(session)"
+            >
+              Zrezygnuj
+            </button>
+          </li>
+        </ul>
+        <ng-template #emptyList>
+          <p class="empty">Brak zapisanych uczestników.</p>
+        </ng-template>
+
+        <p class="warning" *ngIf="sessionLocked(session)">
+          Rezygnacja nie jest już możliwa (mniej niż 24h).
+        </p>
+      </article>
+    </div>
+  </section>
+</div>
