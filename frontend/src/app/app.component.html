@@ -8,13 +8,14 @@
         Rezygnacja możliwa najpóźniej na 24 godziny przed zajęciami.
       </p>
     </div>
-    <button class="ghost" type="button" (click)="resetForm()" [disabled]="saving">
+    <button class="ghost" type="button" (click)="startCreate()" [disabled]="saving">
       Nowe zajęcia
     </button>
   </header>
 
-  <section class="panel form-panel">
-    <h2>{{ editingId ? 'Edytuj zajęcia' : 'Dodaj zajęcia' }}</h2>
+  <section class="panel form-panel" *ngIf="editingId === 0">
+    <h2>Dodaj zajęcia</h2>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
     <form [formGroup]="sessionForm" (ngSubmit)="submitSession()">
       <div class="form-row">
         <label for="title">Nazwa*</label>
@@ -55,10 +56,10 @@
       </div>
       <div class="form-actions">
         <button type="submit" [disabled]="sessionForm.invalid || saving">
-          {{ editingId ? 'Zapisz zmiany' : 'Dodaj zajęcia' }}
+          Dodaj zajęcia
         </button>
         <button type="button" class="ghost" (click)="resetForm()" [disabled]="saving">
-          Wyczyść
+          Anuluj
         </button>
       </div>
     </form>
@@ -73,17 +74,69 @@
       </div>
     </div>
 
-    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+    <p class="error" *ngIf="errorMessage && !editingId">{{ errorMessage }}</p>
 
     <div class="sessions-list">
       <article class="session-card" *ngFor="let session of sessions">
-        <header>
+        <!-- Formularz edycji -->
+        <section class="edit-form" *ngIf="editingId === session.id">
+          <h3>Edytuj zajęcia</h3>
+          <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+          <form [formGroup]="sessionForm" (ngSubmit)="submitSession()">
+            <div class="form-row">
+              <label [attr.for]="'title-' + session.id">Nazwa*</label>
+              <input
+                [id]="'title-' + session.id"
+                type="text"
+                placeholder="np. Poranna joga"
+                formControlName="title"
+              />
+              <small *ngIf="sessionForm.get('title')?.invalid && sessionForm.get('title')?.touched">
+                Wpisz nazwę zajęć.
+              </small>
+            </div>
+            <div class="form-row">
+              <label [attr.for]="'description-' + session.id">Opis</label>
+              <textarea
+                [id]="'description-' + session.id"
+                rows="3"
+                placeholder="Czego dotyczy trening?"
+                formControlName="description"
+              ></textarea>
+            </div>
+            <div class="form-grid">
+              <div class="form-row">
+                <label [attr.for]="'startTime-' + session.id">Data i godzina*</label>
+                <input [id]="'startTime-' + session.id" type="datetime-local" formControlName="startTime" />
+              </div>
+              <div class="form-row">
+                <label [attr.for]="'capacity-' + session.id">Limit miejsc</label>
+                <input
+                  [id]="'capacity-' + session.id"
+                  type="number"
+                  min="1"
+                  placeholder="bez limitu"
+                  formControlName="capacity"
+                />
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="submit" [disabled]="sessionForm.invalid || saving">
+                Zapisz zmiany
+              </button>
+              <button type="button" class="ghost" (click)="resetForm()" [disabled]="saving">
+                Anuluj
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Widok sesji -->
+        <header *ngIf="editingId !== session.id">
           <div>
-            <h3>{{ session.title }}</h3>
+            <h3>{{ session.title }} · {{ getSessionTime(session) }}</h3>
             <p class="time">
-              {{ session.startTime | date: 'fullDate' : undefined : 'pl-PL' }}
-              ·
-              {{ session.startTime | date: 'shortTime' : undefined : 'pl-PL' }}
+              {{ getSessionDate(session) }}
             </p>
             <p class="desc" *ngIf="session.description">{{ session.description }}</p>
           </div>
@@ -97,14 +150,15 @@
           </div>
         </header>
 
-        <p class="meta">
-          Zapisanych: <strong>{{ session.attendeeCount }}</strong>
+        <p class="meta" *ngIf="editingId !== session.id">
+          <strong>Zapisani ({{ session.attendeeCount }}</strong>
           <span *ngIf="session.capacity !== null">
             / {{ session.capacity }}
           </span>
+          <strong>):</strong> {{ getAttendeeNames(session) }}
         </p>
 
-        <div class="booking-form">
+        <div class="booking-form" *ngIf="editingId !== session.id">
           <input
             type="text"
             placeholder="Twoje imię"
@@ -121,9 +175,9 @@
             Dołącz
           </button>
         </div>
-        <small class="hint" *ngIf="sessionFull(session)">Brak wolnych miejsc.</small>
+        <small class="hint" *ngIf="sessionFull(session) && editingId !== session.id">Brak wolnych miejsc.</small>
 
-        <ul class="bookings" *ngIf="session.bookings.length; else emptyList">
+        <ul class="bookings" *ngIf="session.bookings.length && editingId !== session.id; else emptyList">
           <li *ngFor="let booking of session.bookings">
             <span>{{ booking.attendeeName }}</span>
             <button
@@ -137,10 +191,10 @@
           </li>
         </ul>
         <ng-template #emptyList>
-          <p class="empty">Brak zapisanych uczestników.</p>
+          <p class="empty" *ngIf="editingId !== session.id">Brak zapisanych uczestników.</p>
         </ng-template>
 
-        <p class="warning" *ngIf="sessionLocked(session)">
+        <p class="warning" *ngIf="sessionLocked(session) && editingId !== session.id">
           Rezygnacja nie jest już możliwa (mniej niż 24h).
         </p>
       </article>

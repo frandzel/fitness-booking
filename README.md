@@ -41,3 +41,43 @@ cd backend && ./mvnw test
 cd frontend && npm run build
 ```
 
+## Hosting na Render.com (darmowy tier)
+
+Aplikacja jest gotowa do wdrożenia na Render.com z darmowym planem.
+
+### Wymagania
+- Konto na [Render.com](https://render.com) (darmowe)
+- Repozytorium na GitHubie (już masz: https://github.com/frandzel/fitness-booking)
+
+### Kroki wdrożenia
+
+1. **Zaloguj się do Render.com** i połącz swoje konto GitHub
+
+2. **Utwórz nowy "Blueprint"** (lub użyj opcji "New +" → "Blueprint"):
+   - Render automatycznie wykryje plik `render.yaml` z repozytorium
+   - Wybierz repozytorium `frandzel/fitness-booking`
+   - Render utworzy 3 serwisy:
+     - **PostgreSQL Database** (darmowa baza danych)
+     - **Backend API** (Spring Boot)
+     - **Frontend** (statyczna strona Angular)
+
+3. **Po wdrożeniu**:
+   - Backend będzie dostępny pod adresem: `https://fitness-booking-api.onrender.com`
+   - Frontend będzie dostępny pod adresem: `https://fitness-booking-frontend.onrender.com`
+   - Baza danych będzie automatycznie skonfigurowana
+
+4. **Aktualizuj CORS w backendzie** (jeśli potrzebne):
+   - W Render Dashboard → Backend Service → Environment
+   - Ustaw `CORS_ORIGINS` na URL frontendu
+
+### Alternatywne opcje hostingu
+
+- **Railway.app** - podobny do Render, darmowy tier z $5 kredytem miesięcznie
+- **Vercel** (frontend) + **Render** (backend) - Vercel świetny dla Angular
+- **Netlify** (frontend) + **Render** (backend) - Netlify też dobry dla statycznych stron
+
+### Uwagi
+- Na darmowym planie Render aplikacja "śpi" po 15 minutach bezczynności (pierwsze żądanie może być wolne)
+- Baza PostgreSQL jest darmowa, ale ma limit 90MB
+- Wszystkie dane są trwałe (nie znikają po restarcie jak H2 w pamięci)
+

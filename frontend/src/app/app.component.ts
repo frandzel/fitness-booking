@@ -43,12 +43,14 @@ export class AppComponent implements OnInit {
 
   loadSessions(): void {
     this.loading = true;
+    this.errorMessage = '';
     this.sessionsService
       .list()
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (sessions) => {
-          this.sessions = sessions;
+          this.sessions = sessions || [];
+          this.errorMessage = '';
         },
         error: (error) => this.handleError(error)
       });
@@ -62,7 +64,7 @@ export class AppComponent implements OnInit {
 
     this.saving = true;
     const payload = this.buildPayload();
-    const request$ = this.editingId
+    const request$ = this.editingId && this.editingId > 0
       ? this.sessionsService.update(this.editingId, payload)
       : this.sessionsService.create(payload);
 
@@ -89,6 +91,11 @@ export class AppComponent implements OnInit {
 
   resetForm(): void {
     this.editingId = null;
+    this.sessionForm.reset();
+  }
+
+  startCreate(): void {
+    this.editingId = 0;
     this.sessionForm.reset();
   }
 
@@ -156,6 +163,42 @@ export class AppComponent implements OnInit {
       session.capacity !== null &&
       session.attendeeCount >= session.capacity
     );
+  }
+
+  getAttendeeNames(session: ClassSession): string {
+    if (!session || !session.bookings || session.bookings.length === 0) {
+      return 'brak';
+    }
+    return session.bookings.map(b => b.attendeeName).join(', ');
+  }
+
+  getSessionTime(session: ClassSession): string {
+    if (!session || !session.startTime) {
+      return '';
+    }
+    try {
+      const date = new Date(session.startTime);
+      return date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return '';
+    }
+  }
+
+  getSessionDate(session: ClassSession): string {
+    if (!session || !session.startTime) {
+      return '';
+    }
+    try {
+      const date = new Date(session.startTime);
+      return date.toLocaleDateString('pl-PL', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    } catch {
+      return '';
+    }
   }
 
   private buildPayload(): SessionPayload {
